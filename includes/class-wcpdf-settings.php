@@ -17,6 +17,7 @@ class Settings {
 
 		// include settings classes
 		$this->general = include( 'class-wcpdf-settings-general.php' );
+		$this->test = include( 'class-wcpdf-settings-test.php' );
 		$this->documents = include( 'class-wcpdf-settings-documents.php' );
 		$this->debug = include( 'class-wcpdf-settings-debug.php' );
 

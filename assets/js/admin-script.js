@@ -36,4 +36,26 @@ jQuery( function( $ ) {
 			$(this).closest('td').find('.description').hide();
 		}
 	}).trigger('change');
+
+
+
+
+
+
+	// Preview test
+	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
+		let val     = $(this).val();
+		let preview = $('#preview');
+
+		// block ui
+		preview.block( {
+			message: null,
+			overlayCSS: {
+				background: '#fff',
+				opacity: 0.6
+			}
+		} );
+		$( '#preview .shop-name h3' ).text( val );
+		preview.unblock();
+	} );
 });
