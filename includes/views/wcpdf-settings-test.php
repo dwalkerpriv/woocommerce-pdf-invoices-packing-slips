@@ -97,27 +97,28 @@
 		<script id="script">
 			var url = '<?= $pdf_path; ?>';
 
-			pdfjsLib.GlobalWorkerOptions.workerSrc =
-				'<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
+			pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
 
 			var loadingTask = pdfjsLib.getDocument(url);
+
 			loadingTask.promise.then(function(pdf) {
 
 				pdf.getPage(1).then(function(page) {
-				var scale = 1.5;
-				var viewport = page.getViewport({ scale: scale, });
+					var scale = 1.5;
+					var viewport = page.getViewport({ scale: scale, });
 
-				var canvas = document.getElementById('the-canvas');
-				var context = canvas.getContext('2d');
-				canvas.height = viewport.height;
-				canvas.width = viewport.width;
+					var canvas = document.getElementById('the-canvas');
+					var context = canvas.getContext('2d');
+					canvas.height = viewport.height;
+					canvas.width = viewport.width;
 
-				var renderContext = {
-					canvasContext: context,
-					viewport: viewport,
-				};
-				page.render(renderContext);
+					var renderContext = {
+						canvasContext: context,
+						viewport: viewport,
+					};
+					page.render(renderContext);
 				});
+				
 			});
 		</script>
 	</div>
