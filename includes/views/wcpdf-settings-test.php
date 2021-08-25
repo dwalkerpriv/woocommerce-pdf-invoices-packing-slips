@@ -31,12 +31,94 @@
 		<h2 class="nav-tab-wrapper">
 			<a href="#" class="nav-tab nav-tab-preview nav-tab-active">Preview</a>
 		</h2>
-		<div class="preview-wrapper" style="background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;">
-			<?php
-				$plugin_folder = trailingslashit( basename(__DIR__) );
-				$preview       = true;
-				include_once( WPO_WCPDF()->plugin_path().'/templates/Simple/invoice.php' );
-			?>
+		<script src="<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.js"></script>
+		<div class="preview-wrapper" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;">
+			<canvas id="the-canvas" style="width: 100%; direction: ltr;"></canvas>
 		</div>
+		<?php
+			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
+			$order         = wc_get_order( reset( $last_order_id ) );
+			$document      = wcpdf_get_document( 'invoice', $order );
+			if( $document->exists() ) {
+				try {
+					$document = wcpdf_get_document( $document->type, $order->get_id(), true );
+					if ( !$document ) { // something went wrong, continue trying with other documents
+						return;
+					}
+					$filename = $document->get_filename();
+					$pdf_path = $filename;
+	
+					$lock_file = apply_filters( 'wpo_wcpdf_lock_attachment_file', true );
+	
+					// if this file already exists in the temp path, we'll reuse it if it's not older than 60 seconds
+					$max_reuse_age = apply_filters( 'wpo_wcpdf_reuse_attachment_age', 60 );
+					if ( file_exists($pdf_path) && $max_reuse_age > 0 ) {
+						// get last modification date
+						if ($filemtime = filemtime($pdf_path)) {
+							$time_difference = time() - $filemtime;
+							if ( $time_difference < $max_reuse_age ) {
+								// check if file is still being written to
+								if ( $lock_file && WPO_WCPDF()->main->wait_for_file_lock( $pdf_path ) === false ) {
+									return;
+								} else {
+									// make sure this gets logged, but don't abort process
+									wcpdf_log_error( "Attachment file locked (reusing: {$pdf_path})", 'critical' );
+								}
+							}
+						}
+					}
+	
+					// get pdf data & store
+					$pdf_data = $document->get_pdf();
+	
+					if ( $lock_file ) {
+						file_put_contents ( $pdf_path, $pdf_data, LOCK_EX );
+					} else {
+						file_put_contents ( $pdf_path, $pdf_data );					
+					}
+	
+					// wait for file lock
+					if ( $lock_file && WPO_WCPDF()->main->wait_for_file_lock( $pdf_path ) === true ) {
+						wcpdf_log_error( "Attachment file locked ({$pdf_path})", 'critical' );
+					}
+						
+				} catch ( \Exception $e ) {
+					wcpdf_log_error( $e->getMessage(), 'critical', $e );
+					return;
+				} catch ( \Dompdf\Exception $e ) {
+					wcpdf_log_error( 'DOMPDF exception: '.$e->getMessage(), 'critical', $e );
+					return;
+				} catch ( \Error $e ) {
+					wcpdf_log_error( $e->getMessage(), 'critical', $e );
+					return;
+				}
+			}
+		?>
+		<script id="script">
+			var url = '<?= $pdf_path; ?>';
+
+			pdfjsLib.GlobalWorkerOptions.workerSrc =
+				'<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
+
+			var loadingTask = pdfjsLib.getDocument(url);
+			loadingTask.promise.then(function(pdf) {
+
+				pdf.getPage(1).then(function(page) {
+				var scale = 1.5;
+				var viewport = page.getViewport({ scale: scale, });
+
+				var canvas = document.getElementById('the-canvas');
+				var context = canvas.getContext('2d');
+				canvas.height = viewport.height;
+				canvas.width = viewport.width;
+
+				var renderContext = {
+					canvasContext: context,
+					viewport: viewport,
+				};
+				page.render(renderContext);
+				});
+			});
+		</script>
 	</div>
 </div>
