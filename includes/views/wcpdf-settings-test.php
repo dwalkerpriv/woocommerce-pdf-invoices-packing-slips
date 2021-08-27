@@ -39,62 +39,10 @@
 			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
 			$order_id      = reset( $last_order_id );
 			$document_type = 'invoice';
-			
-			try {
-				$document = wcpdf_get_document( $document_type, $order_id, true );
-				if ( !$document ) { // something went wrong, continue trying with other documents
-					return;
-				}
-				$filename = $document->get_filename();
-				$pdf_path = $filename;
-
-				$lock_file = apply_filters( 'wpo_wcpdf_lock_attachment_file', true );
-
-				// if this file already exists in the temp path, we'll reuse it if it's not older than 60 seconds
-				$max_reuse_age = apply_filters( 'wpo_wcpdf_reuse_attachment_age', 60 );
-				if ( file_exists($pdf_path) && $max_reuse_age > 0 ) {
-					// get last modification date
-					if ($filemtime = filemtime($pdf_path)) {
-						$time_difference = time() - $filemtime;
-						if ( $time_difference < $max_reuse_age ) {
-							// check if file is still being written to
-							if ( $lock_file && WPO_WCPDF()->main->wait_for_file_lock( $pdf_path ) === false ) {
-								return;
-							} else {
-								// make sure this gets logged, but don't abort process
-								wcpdf_log_error( "Attachment file locked (reusing: {$pdf_path})", 'critical' );
-							}
-						}
-					}
-				}
-
-				// get pdf data & store
-				$pdf_data = $document->get_pdf();
-
-				if ( $lock_file ) {
-					file_put_contents ( $pdf_path, $pdf_data, LOCK_EX );
-				} else {
-					file_put_contents ( $pdf_path, $pdf_data );					
-				}
-
-				// wait for file lock
-				if ( $lock_file && WPO_WCPDF()->main->wait_for_file_lock( $pdf_path ) === true ) {
-					wcpdf_log_error( "Attachment file locked ({$pdf_path})", 'critical' );
-				}
-					
-			} catch ( \Exception $e ) {
-				wcpdf_log_error( $e->getMessage(), 'critical', $e );
-				return;
-			} catch ( \Dompdf\Exception $e ) {
-				wcpdf_log_error( 'DOMPDF exception: '.$e->getMessage(), 'critical', $e );
-				return;
-			} catch ( \Error $e ) {
-				wcpdf_log_error( $e->getMessage(), 'critical', $e );
-				return;
-			}
+			$pdf_url       = html_entity_decode( wp_nonce_url( admin_url( "admin-ajax.php?action=generate_wpo_wcpdf&document_type={$document_type}&order_ids=" . $order_id ), 'generate_wpo_wcpdf' ) );
 		?>
 		<script id="script">
-			var url = '<?= $pdf_path; ?>';
+			var url = '<?= $pdf_url; ?>';
 
 			pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
 
