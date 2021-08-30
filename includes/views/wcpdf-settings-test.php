@@ -38,34 +38,60 @@
 		<?php
 			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
 			$order_id      = reset( $last_order_id );
-			$document_type = 'invoice';
-			$pdf_url       = html_entity_decode( wp_nonce_url( admin_url( "admin-ajax.php?action=generate_wpo_wcpdf&document_type={$document_type}&order_ids=" . $order_id ), 'generate_wpo_wcpdf' ) );
+			$invoice = wcpdf_get_invoice( $order_id );
+			$invoice->set_date(current_time( 'timestamp', true ));
+			$number_store_method = WPO_WCPDF()->settings->get_sequential_number_store_method();
+			$number_store_name = apply_filters( 'wpo_wcpdf_document_sequential_number_store', 'invoice_number', $invoice );
+			$number_store = new WPO\WC\PDF_Invoices\Documents\Sequential_Number_Store( $number_store_name, $number_store_method );
+			$invoice->set_number( $number_store->get_next() );
+			$pdf_data = base64_encode( $invoice->get_pdf() );
+			
+		
 		?>
 		<script id="script">
-			var url = '<?= $pdf_url; ?>';
+			// atob() is used to convert base64 encoded PDF to binary-like data.
+			// (See also https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/
+			// Base64_encoding_and_decoding.)
+			var pdfData = atob( '<?= $pdf_data; ?>' );
 
+			// Loaded via <script> tag, create shortcut to access PDF.js exports.
+			var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+			// The workerSrc property shall be specified.
 			pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
 
-			var loadingTask = pdfjsLib.getDocument(url);
-
+			// Using DocumentInitParameters object to load binary data.
+			var loadingTask = pdfjsLib.getDocument({data: pdfData});
 			loadingTask.promise.then(function(pdf) {
+			console.log('PDF loaded');
+			
+			// Fetch the first page
+			var pageNumber = 1;
+			pdf.getPage(pageNumber).then(function(page) {
+				console.log('Page loaded');
+				
+				var scale = 1.5;
+				var viewport = page.getViewport({scale: scale});
 
-				pdf.getPage(1).then(function(page) {
-					var scale = 1.5;
-					var viewport = page.getViewport({ scale: scale, });
+				// Prepare canvas using PDF page dimensions
+				var canvas = document.getElementById('the-canvas');
+				var context = canvas.getContext('2d');
+				canvas.height = viewport.height;
+				canvas.width = viewport.width;
 
-					var canvas = document.getElementById('the-canvas');
-					var context = canvas.getContext('2d');
-					canvas.height = viewport.height;
-					canvas.width = viewport.width;
-
-					var renderContext = {
-						canvasContext: context,
-						viewport: viewport,
-					};
-					page.render(renderContext);
+				// Render PDF page into canvas context
+				var renderContext = {
+				canvasContext: context,
+				viewport: viewport
+				};
+				var renderTask = page.render(renderContext);
+				renderTask.promise.then(function () {
+				console.log('Page rendered');
 				});
-
+			});
+			}, function (reason) {
+			// PDF loading error
+			console.error(reason);
 			});
 		</script>
 	</div>
