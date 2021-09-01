@@ -39,6 +39,8 @@ class Settings {
 
 		// AJAX set number store
 		add_action( 'wp_ajax_wpo_wcpdf_set_next_number', array($this, 'set_number_store' ));
+
+		add_action( 'wp_ajax_wpo_wcpdf_preview', array($this, 'ajax_preview' ));
 	}
 
 	public function menu() {
@@ -113,6 +115,45 @@ class Settings {
 		} else {
 			include('views/wcpdf-settings-page.php');
 		}
+	}
+
+	public function ajax_preview() {
+		check_ajax_referer( "wpo_wcpdf_preview", 'security' );
+
+		// check permissions
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			die(); 
+		}
+
+		if( ! empty( $_POST['order_id'] ) ) {
+			$order_id = sanitize_text_field( $_POST['order_id'] );
+			$invoice = wcpdf_get_invoice( $order_id );
+			$invoice->set_date(current_time( 'timestamp', true ));
+			$number_store_method = WPO_WCPDF()->settings->get_sequential_number_store_method();
+			$number_store_name = apply_filters( 'wpo_wcpdf_document_sequential_number_store', 'invoice_number', $invoice );
+			$number_store = new \WPO\WC\PDF_Invoices\Documents\Sequential_Number_Store( $number_store_name, $number_store_method );
+			$invoice->set_number( $number_store->get_next() );
+			$html = null;
+
+			// make replacements
+			if( ! empty( $_POST['shop_name'] ) ) {
+				$shop_name = sanitize_text_field( $_POST['shop_name'] );
+
+				$html    = $invoice->get_html();
+				$setting = reset( $invoice->get_setting( 'shop_name' ) );
+				$html    = str_replace( $setting, $shop_name, $html );
+			}
+
+			if( ! is_null( $html ) ) {
+				$pdf_data = $invoice->get_pdf( $html );
+			} else {
+				$pdf_data = $invoice->get_pdf();
+			}
+
+			wp_send_json_success( array( 'pdf_data' => base64_encode( $pdf_data ) ) );
+		}
+
+		exit();
 	}
 
 	public function add_settings_fields( $settings_fields, $page, $option_group, $option_name ) {

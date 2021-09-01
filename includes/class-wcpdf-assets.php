@@ -125,6 +125,7 @@ class Assets {
 				'wpo_wcpdf_admin',
 				array(
 					'ajaxurl'		=> admin_url( 'admin-ajax.php' ),
+					'pdfjs_worker'  => WPO_WCPDF()->plugin_url() . '/assets/js/pdf_js/pdf.worker.js',
 				)
 			);
 

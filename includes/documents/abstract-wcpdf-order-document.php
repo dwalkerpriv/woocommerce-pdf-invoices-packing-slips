@@ -707,7 +707,7 @@ abstract class Order_Document {
 	|--------------------------------------------------------------------------
 	*/
 
-	public function get_pdf() {
+	public function get_pdf( $html = null ) {
 		$pdf = null;
 		if ( $pdf_file = apply_filters( 'wpo_wcpdf_load_pdf_file_path', null, $this ) ) {
 			$pdf = file_get_contents( $pdf_file );
@@ -724,7 +724,12 @@ abstract class Order_Document {
 			'paper_orientation'	=> apply_filters( 'wpo_wcpdf_paper_orientation', 'portrait', $this->get_type(), $this ),
 			'font_subsetting'	=> $this->get_setting( 'font_subsetting', false ),
 		);
-		$pdf_maker = wcpdf_get_pdf_maker( $this->get_html(), $pdf_settings );
+
+		if( is_null( $html ) ) {
+			$html = $this->get_html();
+		}
+
+		$pdf_maker = wcpdf_get_pdf_maker( $html, $pdf_settings );
 		$pdf = $pdf_maker->output();
 		
 		do_action( 'wpo_wcpdf_after_pdf', $this->get_type(), $this );

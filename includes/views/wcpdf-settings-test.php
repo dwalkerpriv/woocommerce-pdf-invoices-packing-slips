@@ -32,12 +32,10 @@
 			<a href="#" class="nav-tab nav-tab-preview nav-tab-active">Preview</a>
 		</h2>
 		<script src="<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.js"></script>
-		<div class="preview-wrapper" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;">
-			<canvas id="the-canvas" style="width: 100%; direction: ltr;"></canvas>
-		</div>
 		<?php
 			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
 			$order_id      = reset( $last_order_id );
+
 			$invoice = wcpdf_get_invoice( $order_id );
 			$invoice->set_date(current_time( 'timestamp', true ));
 			$number_store_method = WPO_WCPDF()->settings->get_sequential_number_store_method();
@@ -45,54 +43,7 @@
 			$number_store = new WPO\WC\PDF_Invoices\Documents\Sequential_Number_Store( $number_store_name, $number_store_method );
 			$invoice->set_number( $number_store->get_next() );
 			$pdf_data = base64_encode( $invoice->get_pdf() );
-			
-		
 		?>
-		<script id="script">
-			// atob() is used to convert base64 encoded PDF to binary-like data.
-			// (See also https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/
-			// Base64_encoding_and_decoding.)
-			var pdfData = atob( '<?= $pdf_data; ?>' );
-
-			// Loaded via <script> tag, create shortcut to access PDF.js exports.
-			var pdfjsLib = window['pdfjs-dist/build/pdf'];
-
-			// The workerSrc property shall be specified.
-			pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.worker.js';
-
-			// Using DocumentInitParameters object to load binary data.
-			var loadingTask = pdfjsLib.getDocument({data: pdfData});
-			loadingTask.promise.then(function(pdf) {
-			console.log('PDF loaded');
-			
-			// Fetch the first page
-			var pageNumber = 1;
-			pdf.getPage(pageNumber).then(function(page) {
-				console.log('Page loaded');
-				
-				var scale = 1.5;
-				var viewport = page.getViewport({scale: scale});
-
-				// Prepare canvas using PDF page dimensions
-				var canvas = document.getElementById('the-canvas');
-				var context = canvas.getContext('2d');
-				canvas.height = viewport.height;
-				canvas.width = viewport.width;
-
-				// Render PDF page into canvas context
-				var renderContext = {
-				canvasContext: context,
-				viewport: viewport
-				};
-				var renderTask = page.render(renderContext);
-				renderTask.promise.then(function () {
-				console.log('Page rendered');
-				});
-			});
-			}, function (reason) {
-			// PDF loading error
-			console.error(reason);
-			});
-		</script>
+		<div id="preview-wrapper" data-order_id="<?= $order_id; ?>" data-nonce="<?= wp_create_nonce( 'wpo_wcpdf_preview' ); ?>" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;"></div>
 	</div>
 </div>
