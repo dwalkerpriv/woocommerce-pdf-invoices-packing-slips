@@ -133,22 +133,14 @@ class Settings {
 			$number_store_name = apply_filters( 'wpo_wcpdf_document_sequential_number_store', 'invoice_number', $invoice );
 			$number_store = new \WPO\WC\PDF_Invoices\Documents\Sequential_Number_Store( $number_store_name, $number_store_method );
 			$invoice->set_number( $number_store->get_next() );
-			$html = null;
 
 			// make replacements
 			if( ! empty( $_POST['shop_name'] ) ) {
 				$shop_name = sanitize_text_field( $_POST['shop_name'] );
-
-				$html    = $invoice->get_html();
-				$setting = reset( $invoice->get_setting( 'shop_name' ) );
-				$html    = str_replace( $setting, $shop_name, $html );
+				$invoice->settings['shop_name']['default'] = $shop_name;
 			}
 
-			if( ! is_null( $html ) ) {
-				$pdf_data = $invoice->get_pdf( $html );
-			} else {
-				$pdf_data = $invoice->get_pdf();
-			}
+			$pdf_data = $invoice->get_pdf();
 
 			wp_send_json_success( array( 'pdf_data' => base64_encode( $pdf_data ) ) );
 		}

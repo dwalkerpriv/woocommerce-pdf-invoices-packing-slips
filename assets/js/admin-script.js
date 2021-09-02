@@ -39,9 +39,14 @@ jQuery( function( $ ) {
 
 
 
+	// Preview on page load
+	$( document ).ready( ajax_load_preview );
 
-	// Preview test
-	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
+	// Preview on user input
+	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', ajax_load_preview );
+
+	function ajax_load_preview() {
+		let delay     = 2000;
 		let input     = $(this);
 		let shop_name = input.val();
 		let wrapper   = $( '#preview-wrapper' );
@@ -70,15 +75,16 @@ jQuery( function( $ ) {
 			data:     data,
 			success: function( response ) {
 				if( response.data.pdf_data ) {
-					let canvas_id = 'preview-canvas';
-					wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
-					pdf_js( worker, canvas_id, response.data.pdf_data );
+					setTimeout( function() {
+						let canvas_id = 'preview-canvas';
+						wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
+						pdf_js( worker, canvas_id, response.data.pdf_data );
+						wrapper.unblock();
+					}, delay );
 				}
 			}
 		});
-
-		wrapper.unblock();
-	} );
+	}
 
 	function pdf_js( worker, canvas_id, pdf_data ) {
 		// atob() is used to convert base64 encoded PDF to binary-like data.

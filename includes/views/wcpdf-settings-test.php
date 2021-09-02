@@ -35,14 +35,6 @@
 		<?php
 			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
 			$order_id      = reset( $last_order_id );
-
-			$invoice = wcpdf_get_invoice( $order_id );
-			$invoice->set_date(current_time( 'timestamp', true ));
-			$number_store_method = WPO_WCPDF()->settings->get_sequential_number_store_method();
-			$number_store_name = apply_filters( 'wpo_wcpdf_document_sequential_number_store', 'invoice_number', $invoice );
-			$number_store = new WPO\WC\PDF_Invoices\Documents\Sequential_Number_Store( $number_store_name, $number_store_method );
-			$invoice->set_number( $number_store->get_next() );
-			$pdf_data = base64_encode( $invoice->get_pdf() );
 		?>
 		<div id="preview-wrapper" data-order_id="<?= $order_id; ?>" data-nonce="<?= wp_create_nonce( 'wpo_wcpdf_preview' ); ?>" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;"></div>
 	</div>
