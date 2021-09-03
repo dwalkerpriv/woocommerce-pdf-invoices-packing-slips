@@ -40,17 +40,32 @@ jQuery( function( $ ) {
 
 
 
-
+	var setTimer     = null;
+	var setTimeout   = null;
+	var startPreview = 1;
 
 	// Preview on page load
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
 	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
-		setTimeout( function() {
-			ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') );
-		}, 2000 );
+        previewTimeout( $(this) );
 	} );
+
+	function previewTimeout( elem ){
+		setTimer = setInterval( function() {
+			startPreview++;
+		}, 1000 );
+
+		setTimeout = window.setTimeout( function() {
+			if( startPreview % 3 == 0 ) {
+				ajax_load_preview( elem );
+				clearInterval( setTimer );
+				clearTimeout( setTimeout );
+				startPreview = 1;
+			}
+		}, 3000 );
+	}
 
 	function ajax_load_preview( elem ) {
 		let shop_name = elem.val();
@@ -58,6 +73,7 @@ jQuery( function( $ ) {
 		let order_id  = wrapper.data('order_id');
 		let nonce     = wrapper.data('nonce');
 		let worker    = wpo_wcpdf_admin.pdfjs_worker;
+		let canvas_id = 'preview-canvas';
 		let data      = {
 			security:  nonce,
 			action:    'wpo_wcpdf_preview',
@@ -73,14 +89,13 @@ jQuery( function( $ ) {
 				opacity: 0.6
 			}
 		} );
-		
+
 		$.ajax({
 			type:     'POST',
 			url:      wpo_wcpdf_admin.ajaxurl,
 			data:     data,
 			success: function( response ) {
 				if( response.data.pdf_data ) {
-					let canvas_id = 'preview-canvas';
 					$( '#'+canvas_id ).remove();
 					wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
 					pdf_js( worker, canvas_id, response.data.pdf_data );
@@ -106,13 +121,6 @@ jQuery( function( $ ) {
 		var loadingTask = pdfjsLib.getDocument({data: pdfData});
 		loadingTask.promise.then(function(pdf) {
 			console.log('PDF loaded');
-
-			// fix for multiple renders https://stackoverflow.com/a/59591027
-			if (this.pdf) {
-				this.pdf.destroy();
-			}
-			this.pdf         = pdf;
-			this.total_pages = this.pdf.numPages;
 			
 			// Fetch the first page
 			var pageNumber = 1;
