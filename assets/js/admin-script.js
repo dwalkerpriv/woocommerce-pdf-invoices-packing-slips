@@ -39,16 +39,21 @@ jQuery( function( $ ) {
 
 
 
+
+
+
 	// Preview on page load
-	$( document ).ready( ajax_load_preview );
+	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
-	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', ajax_load_preview );
+	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
+		setTimeout( function() {
+			ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') )
+		}, 2000 );
+	} );
 
-	function ajax_load_preview() {
-		let delay     = 2000;
-		let input     = $(this);
-		let shop_name = input.val();
+	function ajax_load_preview( elem ) {
+		let shop_name = elem.val();
 		let wrapper   = $( '#preview-wrapper' );
 		let order_id  = wrapper.data('order_id');
 		let nonce     = wrapper.data('nonce');
@@ -75,12 +80,11 @@ jQuery( function( $ ) {
 			data:     data,
 			success: function( response ) {
 				if( response.data.pdf_data ) {
-					setTimeout( function() {
-						let canvas_id = 'preview-canvas';
-						wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
-						pdf_js( worker, canvas_id, response.data.pdf_data );
-						wrapper.unblock();
-					}, delay );
+					let canvas_id = 'preview-canvas';
+					$( '#'+canvas_id ).remove();
+					wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
+					pdf_js( worker, canvas_id, response.data.pdf_data );
+					wrapper.unblock();
 				}
 			}
 		});
