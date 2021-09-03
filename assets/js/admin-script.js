@@ -48,7 +48,7 @@ jQuery( function( $ ) {
 	// Preview on user input
 	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
 		setTimeout( function() {
-			ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') )
+			ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') );
 		}, 2000 );
 	} );
 
