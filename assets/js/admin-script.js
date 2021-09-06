@@ -40,32 +40,17 @@ jQuery( function( $ ) {
 
 
 
-	var setTimer     = null;
-	var setTimeout   = null;
-	var startPreview = 1;
+	let wcpdf_preview;
 
 	// Preview on page load
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
 	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
-        previewTimeout( $(this) );
+		let elem = $(this);
+		clearTimeout( wcpdf_preview );
+		wcpdf_preview = setTimeout( function(){ ajax_load_preview( elem ) }, 2000);
 	} );
-
-	function previewTimeout( elem ){
-		setTimer = setInterval( function() {
-			startPreview++;
-		}, 1000 );
-
-		setTimeout = window.setTimeout( function() {
-			if( startPreview % 3 == 0 ) {
-				ajax_load_preview( elem );
-				clearInterval( setTimer );
-				clearTimeout( setTimeout );
-				startPreview = 1;
-			}
-		}, 3000 );
-	}
 
 	function ajax_load_preview( elem ) {
 		let shop_name = elem.val();
