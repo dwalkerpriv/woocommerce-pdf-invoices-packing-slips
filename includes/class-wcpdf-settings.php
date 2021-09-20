@@ -127,7 +127,9 @@ class Settings {
 
 		if( ! empty( $_POST['order_id'] ) ) {
 			$order_id = sanitize_text_field( $_POST['order_id'] );
-			$invoice = wcpdf_get_invoice( $order_id );
+			$order    = wc_get_order( $order_id );
+			if( empty( $order ) ) wp_send_json_error( array( 'error' => __( 'Order not found', 'woocommerce-pdf-invoices-packing-slips' ) ) );
+			$invoice = wcpdf_get_invoice( $order );
 			$invoice->set_date(current_time( 'timestamp', true ));
 			$number_store_method = WPO_WCPDF()->settings->get_sequential_number_store_method();
 			$number_store_name = apply_filters( 'wpo_wcpdf_document_sequential_number_store', 'invoice_number', $invoice );

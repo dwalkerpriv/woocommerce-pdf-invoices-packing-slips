@@ -58,7 +58,7 @@ jQuery( function( $ ) {
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
-	$( '#wpo-wcpdf-preview #shop_name' ).on( 'keyup paste', function() {
+	$( '#wpo-wcpdf-preview #shop_name, #preview-order' ).on( 'keyup paste', function() {
 		let elem = $(this);
 		clearTimeout( wcpdf_preview );
 		wcpdf_preview = setTimeout( function(){ ajax_load_preview( elem ) }, 2000);
@@ -68,6 +68,9 @@ jQuery( function( $ ) {
 		let shop_name = elem.val();
 		let wrapper   = $( '#preview-wrapper' );
 		let order_id  = wrapper.data('order_id');
+		if( elem[0].id == 'preview-order' ) {
+			order_id = elem.val();
+		}
 		let nonce     = wrapper.data('nonce');
 		let worker    = wpo_wcpdf_admin.pdfjs_worker;
 		let canvas_id = 'preview-canvas';
@@ -92,13 +95,16 @@ jQuery( function( $ ) {
 			url:      wpo_wcpdf_admin.ajaxurl,
 			data:     data,
 			success: function( response ) {
-				if( response.data.pdf_data ) {
+				if( response.data.error ) {
+					$( '#'+canvas_id ).remove();
+					wrapper.append( '<div class="notice notice-error inline" style="margin:0;"><p>'+response.data.error+'</p></div>' );
+				} else if( response.data.pdf_data ) {
 					$( '#'+canvas_id ).remove();
 					wrapper.append( '<canvas id="'+canvas_id+'" style="width:100%;"></canvas>' );
 					pdf_js( worker, canvas_id, response.data.pdf_data );
-					wrapper.unblock();
 				}
-			}
+				wrapper.unblock();
+			},
 		});
 	}
 

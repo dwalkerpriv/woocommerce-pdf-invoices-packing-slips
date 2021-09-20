@@ -36,7 +36,7 @@
 					<option value="last-order">Last order</option>
 					<option value="specific-order">Specific order</option>
 				</select>
-				<input type="number" name="preview-order" id="preview-order">
+				<input type="number" name="preview-order" id="preview-order" placeholder="Order ID">
 			</div>
 		</h2>
 		<script src="<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.js"></script>
@@ -44,6 +44,6 @@
 			$last_order_id = wc_get_orders( array( 'limit' => 1, 'return' => 'ids' ) );
 			$order_id      = reset( $last_order_id );
 		?>
-		<div id="preview-wrapper" data-order_id="<?= $order_id; ?>" data-nonce="<?= wp_create_nonce( 'wpo_wcpdf_preview' ); ?>" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7;"></div>
+		<div id="preview-wrapper" data-order_id="<?= $order_id; ?>" data-nonce="<?= wp_create_nonce( 'wpo_wcpdf_preview' ); ?>" style="position:relative; background-color:white; border-left: 1px solid #c3c4c7; border-bottom: 1px solid #c3c4c7; border-right: 1px solid #c3c4c7; padding:15px;"></div>
 	</div>
 </div>
