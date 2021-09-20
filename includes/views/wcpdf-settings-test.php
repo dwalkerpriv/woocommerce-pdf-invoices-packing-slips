@@ -30,6 +30,14 @@
 	<div class="preview" style="width:40%; display:inline-block; height:auto;">
 		<h2 class="nav-tab-wrapper">
 			<a href="#" class="nav-tab nav-tab-preview nav-tab-active">Preview</a>
+			<div style="float:right;">
+				<label style="font-weight:normal; font-size:.8em;">Source:</label>
+				<select name="preview-source" id="preview-source">
+					<option value="last-order">Last order</option>
+					<option value="specific-order">Specific order</option>
+				</select>
+				<input type="number" name="preview-order" id="preview-order">
+			</div>
 		</h2>
 		<script src="<?= WPO_WCPDF()->plugin_url() ?>/assets/js/pdf_js/pdf.js"></script>
 		<?php

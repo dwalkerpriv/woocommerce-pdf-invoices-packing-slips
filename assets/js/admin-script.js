@@ -42,6 +42,18 @@ jQuery( function( $ ) {
 
 	let wcpdf_preview;
 
+	// Preview source
+	$( '#preview-source' ).on( 'load change', function() {
+		
+		if( $(this).val() == 'specific-order' ) {
+			$( '#preview-order' ).show();
+			$( '#preview-order' ).prop( 'disabled', false );
+		} else {
+			$( '#preview-order' ).hide();
+			$( '#preview-order' ).prop( 'disabled', true );
+		}
+	} ).load();
+
 	// Preview on page load
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
 
