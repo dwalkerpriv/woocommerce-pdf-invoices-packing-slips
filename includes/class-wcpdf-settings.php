@@ -137,9 +137,13 @@ class Settings {
 			$invoice->set_number( $number_store->get_next() );
 
 			// make replacements
-			if( ! empty( $_POST['shop_name'] ) ) {
-				$shop_name = sanitize_text_field( $_POST['shop_name'] );
-				$invoice->settings['shop_name']['default'] = $shop_name;
+			if( ! empty( $_POST['data'] ) ) {
+				// parse form data
+				parse_str( $_POST['data'], $form_data );
+				$form_data = stripslashes_deep( $form_data );
+				foreach( $form_data['wpo_wcpdf_settings_test'] as $setting => $value ) {
+					$invoice->settings[$setting]['default'] = $value['default'];
+				}
 			}
 
 			$pdf_data = $invoice->get_pdf();

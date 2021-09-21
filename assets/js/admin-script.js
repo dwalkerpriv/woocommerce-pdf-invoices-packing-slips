@@ -55,17 +55,17 @@ jQuery( function( $ ) {
 	} ).load();
 
 	// Preview on page load
-	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview #shop_name') ) );
+	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview').serialize(), $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
 	$( '#wpo-wcpdf-preview #shop_name, #preview-order' ).on( 'keyup paste', function() {
-		let elem = $(this);
+		let elem      = $(this);
+		let form_data = elem.closest( '#wpo-wcpdf-preview' ).serialize();
 		clearTimeout( wcpdf_preview );
-		wcpdf_preview = setTimeout( function(){ ajax_load_preview( elem ) }, 2000);
+		wcpdf_preview = setTimeout( function(){ ajax_load_preview( form_data, elem ) }, 2000);
 	} );
 
-	function ajax_load_preview( elem ) {
-		let shop_name = elem.val();
+	function ajax_load_preview( form_data, elem ) {
 		let wrapper   = $( '#preview-wrapper' );
 		let order_id  = wrapper.data('order_id');
 		if( elem[0].id == 'preview-order' ) {
@@ -78,7 +78,7 @@ jQuery( function( $ ) {
 			security:  nonce,
 			action:    'wpo_wcpdf_preview',
 			order_id:  order_id,
-			shop_name: shop_name,
+			data:      form_data,
 		};
 
 		// block ui

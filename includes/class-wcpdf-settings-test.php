@@ -46,6 +46,20 @@ class Settings_Test {
 					'translatable'	=> true,
 				)
 			),
+			array(
+				'type'		=> 'setting',
+				'id'		=> 'shop_address',
+				'title'		=> __( 'Shop Address', 'woocommerce-pdf-invoices-packing-slips' ),
+				'callback'	=> 'textarea',
+				'section'	=> 'test_settings',
+				'args'		=> array(
+					'option_name'	=> $option_name,
+					'id'			=> 'shop_address',
+					'width'			=> '72',
+					'height'		=> '8',
+					'translatable'	=> true,
+				)
+			),
 		);
 
 		WPO_WCPDF()->settings->add_settings_fields( $settings_fields, $page, $option_group, $option_name );
