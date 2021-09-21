@@ -58,7 +58,7 @@ jQuery( function( $ ) {
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview').serialize(), $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
-	$( '#wpo-wcpdf-preview #shop_name, #preview-order' ).on( 'keyup paste', function() {
+	$( '#wpo-wcpdf-preview input[type=text], #wpo-wcpdf-preview textarea, #preview-order' ).on( 'keyup paste', function() {
 		let elem      = $(this);
 		let form_data = elem.closest( '#wpo-wcpdf-preview' ).serialize();
 		clearTimeout( wcpdf_preview );
