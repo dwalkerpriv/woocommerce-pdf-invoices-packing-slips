@@ -58,11 +58,12 @@ jQuery( function( $ ) {
 	$( document ).ready( ajax_load_preview( $('#wpo-wcpdf-preview').serialize(), $('#wpo-wcpdf-preview #shop_name') ) );
 
 	// Preview on user input
-	$( '#wpo-wcpdf-preview :input, #preview-order' ).on( 'keyup change', function() {
+	$( '#wpo-wcpdf-preview input, #wpo-wcpdf-preview textarea, #wpo-wcpdf-preview select, #wpo-wcpdf-preview checkbox, #preview-order' ).on( 'keyup paste', function( event ) {
 		let elem      = $(this);
 		let form_data = elem.closest( '#wpo-wcpdf-preview' ).serialize();
+		let duration  = event.type == 'keyup' ? 1000 : 0;
 		clearTimeout( wcpdf_preview );
-		wcpdf_preview = setTimeout( function(){ ajax_load_preview( form_data, elem ) }, 2000);
+		wcpdf_preview = setTimeout( function(){ ajax_load_preview( form_data, elem ) }, duration );
 	} );
 
 	function ajax_load_preview( form_data, elem ) {
