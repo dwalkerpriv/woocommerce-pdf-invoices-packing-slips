@@ -4,6 +4,8 @@ namespace WPO\WC\PDF_Invoices;
 use WPO\WC\PDF_Invoices\Compatibility\WC_Core as WCX;
 use WPO\WC\PDF_Invoices\Compatibility\Order as WCX_Order;
 use WPO\WC\PDF_Invoices\Compatibility\Product as WCX_Product;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
@@ -586,6 +588,9 @@ class Main {
 			file_put_contents( $path . '.htaccess', 'deny from all' );
 			touch( $path . 'index.php' );
 		}
+
+		// load DOMPDF fonts
+		$this->load_dompdf_font_families_from_source();
 	}
 
 	public function no_dir_notice() {
@@ -757,6 +762,84 @@ class Main {
 				}
 			}
 		}
+	}
+
+	public function get_plugin_fonts_path() {
+		return WPO_WCPDF()->plugin_path() . "/assets/fonts/";
+	}
+
+	private function get_chroot_paths() {
+		$chroot = array( WP_CONTENT_DIR ); // default
+
+		if( $wp_upload_base = $this->get_wp_upload_base() ) {
+			$chroot[] = $wp_upload_base;
+		}
+		if( $tmp_base = $this->get_tmp_base() ) {
+			$chroot[] = $tmp_base;
+		}
+
+		return apply_filters( 'wpo_wcpdf_dompdf_chroot', $chroot );
+	}
+
+	public function load_dompdf_font_families_from_source( $dir = null ) {
+		require WPO_WCPDF()->plugin_path() . '/vendor/autoload.php';
+
+		// set options
+		$options = new Options( array(
+			'tempDir'                 => $this->get_tmp_path( 'dompdf' ),
+			'fontDir'                 => $this->get_tmp_path( 'fonts' ),
+			'fontCache'               => $this->get_tmp_path( 'fonts' ),
+			'chroot'                  => $this->get_chroot_paths(),
+			'logOutputFile'           => $this->get_tmp_path( 'dompdf' ) . "/log.htm",
+			'defaultFont'             => 'dejavu sans',
+			'isRemoteEnabled'         => true,
+			// HTML5 parser requires iconv
+			'isHtml5ParserEnabled'    => ( isset( WPO_WCPDF()->settings->debug_settings['use_html5_parser'] ) && extension_loaded( 'iconv' ) ) ? true : false,
+			'isFontSubsettingEnabled' => false,
+		) );
+
+		$dompdf           = new Dompdf( $options );
+		$fontDir          = is_null( $dir ) ? $options['fontDir'] : $dir;
+		$rootDir          = $options->getRootDir();
+		$file             = $rootDir . "/lib/fonts/dompdf_font_family_cache.dist.php";
+		$distFontsClosure = require $file;
+		$distFonts        = is_array( $distFontsClosure ) ? $distFontsClosure : $distFontsClosure( $rootDir );
+
+		if ( ! is_readable( $dompdf->getFontMetrics()->getCacheFile() ) ) {
+			$this->save_dompdf_font_families( $dompdf, $distFonts );
+			return;
+		}
+
+		$cacheDataClosure = require $dompdf->getFontMetrics()->getCacheFile();
+		$cacheData        = is_array( $cacheDataClosure ) ? $cacheDataClosure : $cacheDataClosure( $fontDir, $rootDir );
+
+		$fonts = [];
+		if ( is_array( $fonts ) ) {
+			foreach ( $cacheData as $key => $value ) {
+				$fonts[stripslashes($key)] = $value;
+			}
+		}
+
+		// Merge provided fonts
+		$fonts += $distFonts;
+		$this->save_dompdf_font_families( $dompdf, $fonts );
+		return;
+	}
+
+	public function save_dompdf_font_families( $dompdf, $fonts = [] ) {
+		$cacheData = sprintf("<?php return array (%s", PHP_EOL);
+		foreach ( $fonts as $family => $variants ) {
+			$cacheData .= sprintf("  '%s' => array(%s", addslashes($family), PHP_EOL);
+			foreach ($variants as $variant => $path) {
+				$path = sprintf("'%s'", $path);
+				$path = str_replace('\'' . $dompdf->getOptions()->getFontDir() , '$fontDir . \'' , $path);
+				$path = str_replace('\'' . $dompdf->getOptions()->getRootDir() , '$rootDir . \'' , $path);
+				$cacheData .= sprintf("    '%s' => %s,%s", $variant, $path, PHP_EOL);
+			}
+			$cacheData .= sprintf("  ),%s", PHP_EOL);
+		}
+		$cacheData .= ") ?>";
+		file_put_contents( $dompdf->getFontMetrics()->getCacheFile(), $cacheData );
 	}
 
 	public function disable_free( $allowed, $document ) {
