@@ -799,7 +799,7 @@ class Main {
 		) );
 
 		$dompdf           = new Dompdf( $options );
-		$fontDir          = is_null( $dir ) ? $options['fontDir'] : $dir;
+		$fontDir          = is_null( $dir ) ? $this->get_tmp_path( 'fonts' ) : $dir;
 		$rootDir          = $options->getRootDir();
 		$file             = $rootDir . "/lib/fonts/dompdf_font_family_cache.dist.php";
 		$distFontsClosure = require $file;
