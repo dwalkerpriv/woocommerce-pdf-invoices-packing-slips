@@ -7,11 +7,8 @@
  */
 namespace Dompdf;
 
-use Dompdf\FrameDecorator\AbstractFrameDecorator;
 use Dompdf\FrameDecorator\Block;
 use Dompdf\FrameDecorator\Page;
-use Dompdf\FrameReflower\Text as TextFrameReflower;
-use Dompdf\Positioner\Inline as InlinePositioner;
 
 /**
  * The line box class
@@ -30,12 +27,12 @@ class LineBox
     protected $_block_frame;
 
     /**
-     * @var AbstractFrameDecorator[]
+     * @var Frame[]
      */
     protected $_frames = [];
 
     /**
-     * @var int
+     * @var integer
      */
     public $wc = 0;
 
@@ -65,7 +62,7 @@ class LineBox
     public $right = 0.0;
 
     /**
-     * @var AbstractFrameDecorator
+     * @var Frame
      */
     public $tallest_frame = null;
 
@@ -78,13 +75,6 @@ class LineBox
      * @var bool
      */
     public $br = false;
-
-    /**
-     * Whether the line box contains any inline-positioned frames.
-     *
-     * @var bool
-     */
-    public $inline = false;
 
     /**
      * Class constructor
@@ -149,6 +139,9 @@ class LineBox
         return $childs;
     }
 
+    /**
+     *
+     */
     public function get_float_offsets()
     {
         static $anti_infinite_loop = 10000; // FIXME smelly hack
@@ -250,7 +243,7 @@ class LineBox
     }
 
     /**
-     * @return AbstractFrameDecorator[]
+     * @return Frame[]
      */
     function &get_frames()
     {
@@ -258,73 +251,11 @@ class LineBox
     }
 
     /**
-     * @param AbstractFrameDecorator $frame
+     * @param Frame $frame
      */
     public function add_frame(Frame $frame)
     {
         $this->_frames[] = $frame;
-
-        if ($frame->get_positioner() instanceof InlinePositioner) {
-            $this->inline = true;
-        }
-    }
-
-    /**
-     * Remove the frame at the given index and all following frames from the
-     * line.
-     *
-     * @param int $index
-     */
-    public function remove_frames(int $index): void
-    {
-        $lastIndex = count($this->_frames) - 1;
-
-        if ($index < 0 || $index > $lastIndex) {
-            return;
-        }
-
-        for ($i = $lastIndex; $i >= $index; $i--) {
-            $f = $this->_frames[$i];
-            unset($this->_frames[$i]);
-            $this->w -= $f->get_margin_width();
-        }
-
-        // Reset array indices
-        $this->_frames = array_values($this->_frames);
-
-        // Recalculate the height of the line
-        $h = 0.0;
-        $this->inline = false;
-
-        foreach ($this->_frames as $f) {
-            $h = max($h, $f->get_margin_height());
-
-            if ($f->get_positioner() instanceof InlinePositioner) {
-                $this->inline = true;
-            }
-        }
-
-        $this->h = $h;
-    }
-
-	/**
-     * Trim trailing whitespace from the line.
-     */
-    public function trim_trailing_ws(): void
-    {
-        $lastIndex = count($this->_frames) - 1;
-
-        if ($lastIndex < 0) {
-            return;
-        }
-
-        $lastFrame = $this->_frames[$lastIndex];
-        $reflower = $lastFrame->get_reflower();
-
-        if ($reflower instanceof TextFrameReflower && !$lastFrame->is_pre()) {
-            $reflower->trim_trailing_ws();
-            $this->recalculate_width();
-        }
     }
 
     /**
@@ -336,8 +267,8 @@ class LineBox
     {
         $width = 0;
 
-        foreach ($this->_frames as $frame) {
-            $width += $frame->get_margin_width();
+        foreach ($this->get_frames() as $frame) {
+            $width += $frame->calculate_auto_width();
         }
 
         return $this->w = $width;
@@ -357,6 +288,10 @@ class LineBox
 
         return $s;
     }
+    /*function __get($prop) {
+      if (!isset($this->{"_$prop"})) return;
+      return $this->{"_$prop"};
+    }*/
 }
 
 /*
